@@ -1,0 +1,1 @@
+cmd_/home/seed/Desktop/lab7/MeltdownKernel/MeltdownKernel.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds --build-id  -o /home/seed/Desktop/lab7/MeltdownKernel/MeltdownKernel.ko /home/seed/Desktop/lab7/MeltdownKernel/MeltdownKernel.o /home/seed/Desktop/lab7/MeltdownKernel/MeltdownKernel.mod.o
